@@ -13,7 +13,7 @@ routes.get('/casas', async (req, res) => {
     return res.json(rows);
 });
 
-routes.get('/wallet/usdt', (req, res) => {
+routes.get('/wallet/usdt/new', (req, res) => {
   const wallets = createUSDTWallets();
   return res.json(wallets);
 });
