@@ -2,6 +2,7 @@ import { Router } from 'express';
 import connection from './database';
 import { createUSDTWallets, recoverUSDTWallets, createUSDCWallets, recoverUSDCWallets } from './wallet';
 import { createBTCWallet, recoverBTCWallet } from './btc';
+import { createETHWallet, recoverETHWallet } from './eth';
 
 const routes = new Router();
 
@@ -68,6 +69,26 @@ routes.post('/wallet/btc/recover', (req, res) => {
 
   try {
     const wallet = recoverBTCWallet({ mnemonic, privateKey });
+    return res.json(wallet);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+routes.get('/wallet/eth/new', (req, res) => {
+  const wallet = createETHWallet();
+  return res.json(wallet);
+});
+
+routes.post('/wallet/eth/recover', (req, res) => {
+  const { mnemonic, privateKey } = req.body;
+
+  if (!mnemonic && !privateKey) {
+    return res.status(400).json({ error: 'Informe mnemonic ou privateKey no body' });
+  }
+
+  try {
+    const wallet = recoverETHWallet({ mnemonic, privateKey });
     return res.json(wallet);
   } catch (err) {
     return res.status(400).json({ error: err.message });
