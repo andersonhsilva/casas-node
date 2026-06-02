@@ -56,9 +56,32 @@ const USDT_NETWORKS = {
   },
 };
 
-function buildNetworks(evmAddress, tronAddress) {
+const USDC_NETWORKS = {
+  erc20: {
+    name: 'Ethereum (ERC-20)',
+    contract: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  },
+  bep20: {
+    name: 'BNB Smart Chain (BEP-20)',
+    contract: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+  },
+  polygon: {
+    name: 'Polygon (PoS)',
+    contract: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+  },
+  arbitrum: {
+    name: 'Arbitrum One',
+    contract: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+  },
+  optimism: {
+    name: 'Optimism',
+    contract: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+  },
+};
+
+function buildNetworks(networkConfig, evmAddress, tronAddress) {
   return Object.fromEntries(
-    Object.entries(USDT_NETWORKS).map(([key, info]) => [
+    Object.entries(networkConfig).map(([key, info]) => [
       key,
       {
         network: info.name,
@@ -69,37 +92,52 @@ function buildNetworks(evmAddress, tronAddress) {
   );
 }
 
-function buildFromMnemonic(mnemonic) {
+function buildFromMnemonic(networkConfig, mnemonic) {
   const evmWallet = ethers.Wallet.fromPhrase(mnemonic);
-  const tronWallet = ethers.HDNodeWallet.fromPhrase(mnemonic, undefined, "m/44'/195'/0'/0/0");
+  const hasTron = 'trc20' in networkConfig;
+  const tronWallet = hasTron
+    ? ethers.HDNodeWallet.fromPhrase(mnemonic, undefined, "m/44'/195'/0'/0/0")
+    : null;
 
   return {
     mnemonic,
     privateKeyEVM: evmWallet.privateKey,
-    privateKeyTron: tronWallet.privateKey,
-    networks: buildNetworks(evmWallet.address, toTronAddress(tronWallet.address)),
+    ...(hasTron && { privateKeyTron: tronWallet.privateKey }),
+    networks: buildNetworks(networkConfig, evmWallet.address, hasTron ? toTronAddress(tronWallet.address) : null),
   };
 }
 
-function buildFromPrivateKey(privateKey) {
+function buildFromPrivateKey(networkConfig, privateKey) {
   const evmWallet = new ethers.Wallet(privateKey);
+  const hasTron = 'trc20' in networkConfig;
 
   return {
     mnemonic: null,
     privateKeyEVM: evmWallet.privateKey,
-    privateKeyTron: evmWallet.privateKey,
-    networks: buildNetworks(evmWallet.address, toTronAddress(evmWallet.address)),
+    ...(hasTron && { privateKeyTron: evmWallet.privateKey }),
+    networks: buildNetworks(networkConfig, evmWallet.address, hasTron ? toTronAddress(evmWallet.address) : null),
   };
 }
 
 export function createUSDTWallets() {
   const { mnemonic: { phrase } } = ethers.Wallet.createRandom();
-  return buildFromMnemonic(phrase);
+  return buildFromMnemonic(USDT_NETWORKS, phrase);
 }
 
 export function recoverUSDTWallets({ mnemonic, privateKey }) {
-  if (mnemonic) return buildFromMnemonic(mnemonic.trim());
-  if (privateKey) return buildFromPrivateKey(privateKey.trim());
+  if (mnemonic) return buildFromMnemonic(USDT_NETWORKS, mnemonic.trim());
+  if (privateKey) return buildFromPrivateKey(USDT_NETWORKS, privateKey.trim());
+  throw new Error('Informe mnemonic ou privateKey');
+}
+
+export function createUSDCWallets() {
+  const { mnemonic: { phrase } } = ethers.Wallet.createRandom();
+  return buildFromMnemonic(USDC_NETWORKS, phrase);
+}
+
+export function recoverUSDCWallets({ mnemonic, privateKey }) {
+  if (mnemonic) return buildFromMnemonic(USDC_NETWORKS, mnemonic.trim());
+  if (privateKey) return buildFromPrivateKey(USDC_NETWORKS, privateKey.trim());
   throw new Error('Informe mnemonic ou privateKey');
 }
 
