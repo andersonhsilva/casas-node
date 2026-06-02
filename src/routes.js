@@ -2,6 +2,7 @@ import { Router } from 'express';
 import connection from './database';
 import { createUSDTWallets, recoverUSDTWallets, createUSDCWallets, recoverUSDCWallets } from './wallet';
 import { createPEPEWallets, recoverPEPEWallets } from './pepe';
+import { createDOGEWallet, recoverDOGEWallet } from './doge';
 import { createBTCWallet, recoverBTCWallet } from './btc';
 import { createETHWallet, recoverETHWallet } from './eth';
 import { createBNBWallet, recoverBNBWallet } from './bnb';
@@ -131,6 +132,26 @@ routes.post('/wallet/pepe/recover', (req, res) => {
 
   try {
     const wallet = recoverPEPEWallets({ mnemonic, privateKey });
+    return res.json(wallet);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+routes.get('/wallet/doge/new', (req, res) => {
+  const wallet = createDOGEWallet();
+  return res.json(wallet);
+});
+
+routes.post('/wallet/doge/recover', (req, res) => {
+  const { mnemonic, privateKey } = req.body;
+
+  if (!mnemonic && !privateKey) {
+    return res.status(400).json({ error: 'Informe mnemonic ou privateKey no body' });
+  }
+
+  try {
+    const wallet = recoverDOGEWallet({ mnemonic, privateKey });
     return res.json(wallet);
   } catch (err) {
     return res.status(400).json({ error: err.message });
